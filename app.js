@@ -78,11 +78,9 @@ const detectarBotones = (data) => {
 };
 
 const items = document.querySelector("#items");
-
 const pintarCarrito = () => {
   //pendiente innerHTML
   items.innerHTML = "";
-
   const template = document.querySelector("#template-carrito").content;
   const fragment = document.createDocumentFragment();
 
