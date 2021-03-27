@@ -1,103 +1,102 @@
+// content load first time and cart in local storage
 document.addEventListener("DOMContentLoaded", () => {
   fetchData();
-  if (localStorage.getItem("carrito")) {
-    carrito = JSON.parse(localStorage.getItem("carrito"));
-    console.log(carrito);
-    pintarCarrito();
+  if (localStorage.getItem("product-in-cart")) {
+    cart = JSON.parse(localStorage.getItem("product-in-cart"));
+    cartDraw();
   }
 });
 
+//fetch all products
 const fetchData = async () => {
   try {
     const res = await fetch("http://localhost:3001/api/products");
     const data = await res.json();
-    pintarProductos(data);
-    detectarBotones(data);
+    productDraw(data);
+    dataButtons(data);
   } catch (error) {
     console.log(error);
   }
 };
 
-//fetch filtrado
-const search = () =>{
-  const input = document.getElementById("filterSearch").value
-  console.log(input)
-  const filterData = async () => {
-    try {
-      const res = await fetch(`http://localhost:3001/api/filter?category=${input}`);
-      const data = await res.json();
-      pintarProductos(data);
-      detectarBotones(data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-  return filterData()
-}
+//filter fetch
+const search = () => {
+  const input = document.getElementById("filterSearch").value; 
+  
+  if(input !== null){
+    const filterData = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:3001/api/filter?category=${input}`
+        );
+        const data = await res.json();
+        productDraw(data);
+        dataButtons(data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    document.getElementById("filterSearch").value = "";
+    return filterData();
+  }else{
+    document.getElementById("filterSearch").value = "";
+     return fetchData();
+  }
+  
+};
 
-
-
-const contendorProductos = document.querySelector("#contenedor-productos");
-const pintarProductos = (data) => {
-  contendorProductos.innerHTML = ""
-  const template = document.querySelector("#template-productos").content;
+const productsContainer = document.querySelector("#product-container");
+const productDraw = (data) => {
+  productsContainer.innerHTML = "";
+  const template = document.querySelector("#template-products").content;
   const fragment = document.createDocumentFragment();
   // console.log(template)
-  data.forEach((producto) => {
+  data.forEach((product) => {
     // console.log(producto)
-    template.querySelector("img").setAttribute("src", producto.url_image);
-    template.querySelector("h5").textContent = producto.name;
-    template.querySelector("p span").textContent = producto.price;
-    template.querySelector("button").dataset.id = producto.id;
+    template.querySelector("img").setAttribute("src", product.url_image);
+    template.querySelector("h5").textContent = product.name;
+    template.querySelector("p span").textContent = product.price;
+    template.querySelector("button").dataset.id = product.id;
     const clone = template.cloneNode(true);
     fragment.appendChild(clone);
   });
-  contendorProductos.appendChild(fragment);
+  productsContainer.appendChild(fragment);
 };
 
-let carrito = {};
+let cart = {};
 
-const detectarBotones = (data) => {
-  const botones = document.querySelectorAll(".card button");
+const dataButtons = (data) => {
+  const buttons = document.querySelectorAll(".card button");
 
-  botones.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      // console.log(btn.dataset.id)
-      const producto = data.find(
-        (item) => item.id === parseInt(btn.dataset.id)
-      );
-      producto.cantidad = 1;
-      if (carrito.hasOwnProperty(producto.id)) {
-        producto.cantidad = carrito[producto.id].cantidad + 1;
+  buttons.forEach((btn) => {
+    btn.addEventListener("click", () => {      
+      const product = data.find((item) => item.id === parseInt(btn.dataset.id));
+      product.amount = 1;
+      if (cart.hasOwnProperty(product.id)) {
+        product.amount = cart[product.id].amount + 1;
       }
-      carrito[producto.id] = { ...producto };
-      // console.log('carrito', carrito)
-      pintarCarrito();
+      cart[product.id] = { ...product };      
+      cartDraw();
     });
   });
 };
 
 const items = document.querySelector("#items");
-
-const pintarCarrito = () => {
-  //pendiente innerHTML
+const cartDraw = () => { 
   items.innerHTML = "";
-
-  const template = document.querySelector("#template-carrito").content;
+  const template = document.querySelector("#template-cart").content;
   const fragment = document.createDocumentFragment();
 
-  Object.values(carrito).forEach((producto) => {
-    // console.log('producto', producto)
-    template.querySelector("th").textContent = producto.id;
-    template.querySelectorAll("td")[0].textContent = producto.name;
-    template.querySelectorAll("td")[1].textContent = producto.cantidad;
+  Object.values(cart).forEach((product) => {    
+    template.querySelector("th").textContent = product.id;
+    template.querySelectorAll("td")[0].textContent = product.name;
+    template.querySelectorAll("td")[1].textContent = product.amount;
     template.querySelector("span").textContent =
-      producto.price * producto.cantidad;
+      product.price * product.amount;
 
-    //botones
-    template.querySelector(".btn-info").dataset.id = producto.id;
-    template.querySelector(".btn-danger").dataset.id = producto.id;
-
+    //buttons
+    template.querySelector(".btn-info").dataset.id = product.id;
+    template.querySelector(".btn-danger").dataset.id = product.id;
     const clone = template.cloneNode(true);
     fragment.appendChild(clone);
   });
@@ -105,15 +104,15 @@ const pintarCarrito = () => {
   items.appendChild(fragment);
 
   pintarFooter();
-  accionBotones();
-  localStorage.setItem("carrito", JSON.stringify(carrito));
+  buttonsAction();
+  localStorage.setItem("product-in-cart", JSON.stringify(cart));
 };
 
-const footer = document.querySelector("#footer-carrito");
+const footer = document.querySelector("#footer-cart");
 const pintarFooter = () => {
   footer.innerHTML = "";
 
-  if (Object.keys(carrito).length === 0) {
+  if (Object.keys(cart).length === 0) {
     footer.innerHTML = `
         <th scope="row" colspan="5">Carrito vacío</th>
         `;
@@ -123,18 +122,18 @@ const pintarFooter = () => {
   const template = document.querySelector("#template-footer").content;
   const fragment = document.createDocumentFragment();
 
-  // sumar cantidad y sumar totales
-  const nCantidad = Object.values(carrito).reduce(
-    (acc, { cantidad }) => acc + cantidad,
+  // sumar amount y sumar totales
+  const nAmount = Object.values(cart).reduce(
+    (acc, { amount }) => acc + amount,
     0
   );
-  const nPrecio = Object.values(carrito).reduce(
-    (acc, { cantidad, price }) => acc + cantidad * price,
+  const nPrecio = Object.values(cart).reduce(
+    (acc, { amount, price }) => acc + amount * price,
     0
   );
   // console.log(nPrecio)
 
-  template.querySelectorAll("td")[0].textContent = nCantidad;
+  template.querySelectorAll("td")[0].textContent = nAmount;
   template.querySelector("span").textContent = nPrecio;
 
   const clone = template.cloneNode(true);
@@ -142,40 +141,39 @@ const pintarFooter = () => {
 
   footer.appendChild(fragment);
 
-  const boton = document.querySelector("#vaciar-carrito");
+  const boton = document.querySelector("#emptyCart");
   boton.addEventListener("click", () => {
-    carrito = {};
-    pintarCarrito();
+    cart = {};
+    cartDraw();
   });
 };
 
-const accionBotones = () => {
-  const botonesAgregar = document.querySelectorAll("#items .btn-info");
-  const botonesEliminar = document.querySelectorAll("#items .btn-danger");
+const buttonsAction = () => {
+  const addButton = document.querySelectorAll("#items .btn-info");
+  const removeButton = document.querySelectorAll("#items .btn-danger");
 
   // console.log(botonesAgregar)
 
-  botonesAgregar.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      // console.log(btn.dataset.id)
-      const producto = carrito[btn.dataset.id];
-      producto.cantidad++;
-      carrito[btn.dataset.id] = { ...producto };
-      pintarCarrito();
+  addButton.forEach((btn) => {
+    btn.addEventListener("click", () => {     
+      const product = cart[btn.dataset.id];
+      product.amount++;
+      cart[btn.dataset.id] = { ...product };
+      cartDraw();
     });
   });
 
-  botonesEliminar.forEach((btn) => {
+  removeButton.forEach((btn) => {
     btn.addEventListener("click", () => {
       // console.log('eliminando...')
-      const producto = carrito[btn.dataset.id];
-      producto.cantidad--;
-      if (producto.cantidad === 0) {
-        delete carrito[btn.dataset.id];
+      const product = cart[btn.dataset.id];
+      product.amount--;
+      if (product.amount === 0) {
+        delete cart[btn.dataset.id];
       } else {
-        carrito[btn.dataset.id] = { ...producto };
+        cart[btn.dataset.id] = { ...product };
       }
-      pintarCarrito();
+      cartDraw();
     });
   });
 };
