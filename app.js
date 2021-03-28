@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
 //fetch all products
 const fetchData = async () => {
   try {
-    const res = await fetch("http://localhost:3001/api/products");
+    const res = await fetch("https://bsale-nodejs-heroku.herokuapp.com/api/products");
     const data = await res.json();
     productDraw(data);
     dataButtons(data);
@@ -27,7 +27,7 @@ const search = () => {
     const filterData = async () => {
       try {
         const res = await fetch(
-          `http://localhost:3001/api/filter?category=${input}`
+          `https://bsale-nodejs-heroku.herokuapp.com/api/filter?category=${input}`
         );
         const data = await res.json();
         productDraw(data);
